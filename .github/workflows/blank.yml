@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  # Manual triggers
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+      dry-run:
+        description: Creates a draft release
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+ 
+jobs:
+  build:
+    name: Build release app
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v3
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: adopt
+
+      - name: building the java keystore
+        run: sudo apt install openssl && ./buildkeystore.sh 
+
+      - name: Create Release
+        uses: actions/upload-artifact@v2
+        with:
+            name: keystore
+            path:  ./**/*.keystore
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+            name: keystore
